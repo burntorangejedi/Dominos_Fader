@@ -2,7 +2,7 @@
 ## Title: Dominos |cff7fffd4Fader|r
 ## Notes: Adds MouseOverActionSettings support to Dominos bars
 ## Author: Your Name
-## Version: 1.0.0
+## Version: @project-version@
 ## Dependencies: Dominos, MouseoverActionSettings
 ## X-Curse-Project-ID: 
 ## X-WoWI-ID: 
