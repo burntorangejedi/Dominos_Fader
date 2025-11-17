@@ -4,9 +4,6 @@ manual-changelog:
   filename: CHANGELOG.md
   markup-type: markdown
 
-move-folders:
-  Dominos_Fader/Modules: Modules
-
 ignore:
   - README.md
   - PACKAGING.md
