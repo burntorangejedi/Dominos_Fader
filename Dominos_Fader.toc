@@ -1,0 +1,16 @@
+## Interface: 110205
+## Title: Dominos |cff7fffd4Fader|r
+## Notes: Adds MouseOverActionSettings support to Dominos bars
+## Author: Your Name
+## Version: 1.0.0
+## Dependencies: Dominos, MouseoverActionSettings
+## X-Curse-Project-ID: 
+## X-WoWI-ID: 
+
+Core.lua
+Modules\ActionBar.lua
+Modules\BagBar.lua
+Modules\MenuBar.lua
+Modules\PetBar.lua
+Modules\StanceBar.lua
+Modules\ExtraBar.lua

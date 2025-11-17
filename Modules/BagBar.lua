@@ -1,0 +1,103 @@
+local addonName, addonTable = ...
+
+local DominosFader = addonTable.DominosFader
+local MAS = addonTable.MAS
+
+if not DominosFader or not MAS then
+    print (addonName .. ": Dominos or MouseoverActionSettings not found. Disabling addon.")
+    return
+end
+
+local BagBarModule = {}
+addonTable.modules.bag = BagBarModule
+
+function BagBarModule:RegisterBar(bar, registrationData)
+    local moduleName = "DominosBagBar"
+    local eventName = "DOMINOS_BAG_BAR_UPDATE"
+    
+    -- Get bag buttons
+    local buttons = {}
+    if bar.buttons then
+        for _, button in pairs(bar.buttons) do
+            if button and button:IsObjectType("Button") then
+                table.insert(buttons, button)
+            end
+        end
+    end
+    
+    if #buttons == 0 then
+        return
+    end
+    
+    -- Create mouseover unit for MAS
+    local mo_unit = {
+        Parents = {bar},
+        visibilityEvent = eventName,
+        scriptRegions = buttons,
+        statusEvents = {},
+    }
+    
+    mo_unit = MAS:NewMouseoverUnit(mo_unit)
+    
+    -- Create MAS module
+    local module = MAS:GetModule(moduleName, true)
+    if not module then
+        module = MAS:NewModule(moduleName)
+    end
+    
+    function module:OnEnable()
+        local dbObj = MAS.db.profile[moduleName]
+        if not dbObj then
+            MAS.db.profile[moduleName] = {
+                enabled = true,
+                minAlpha = 0,
+                maxAlpha = 1,
+                useCustomDelay = false,
+                delay = 0.5,
+                useCustomAnimationSpeed = false,
+                animationSpeed_In = 0.3,
+                animationSpeed_Out = 0.5,
+            }
+            dbObj = MAS.db.profile[moduleName]
+        end
+        
+        if dbObj.useCustomDelay then
+            mo_unit.delay = dbObj.delay
+        end
+        mo_unit.minAlpha = dbObj.minAlpha
+        mo_unit.maxAlpha = dbObj.maxAlpha
+        if dbObj.useCustomAnimationSpeed then
+            mo_unit.animationSpeed_In = dbObj.animationSpeed_In
+            mo_unit.animationSpeed_Out = dbObj.animationSpeed_Out
+        end
+        mo_unit.statusEvents = {}
+        for event, _ in pairs(addonTable.events or {}) do
+            if dbObj[event] then
+                table.insert(mo_unit.statusEvents, event)
+            end
+        end
+        mo_unit:Enable()
+    end
+    
+    function module:OnDisable()
+        mo_unit:Disable()
+    end
+    
+    -- Store reference
+    registrationData.mo_unit = mo_unit
+    registrationData.mas_module = module
+    
+    -- Enable the module if MAS is enabled
+    if MAS:IsEnabled() then
+        module:Enable()
+    end
+end
+
+function BagBarModule:UnregisterBar(bar)
+    local moduleName = "DominosBagBar"
+    
+    local module = MAS:GetModule(moduleName, true)
+    if module then
+        module:Disable()
+    end
+end
