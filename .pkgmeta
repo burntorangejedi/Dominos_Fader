@@ -6,8 +6,13 @@ manual-changelog:
 
 ignore:
   - README.md
+  - PACKAGING.md
+  - CHANGELOG.md
   - .git
   - .github
   - .gitignore
+  - .gitattributes
+  - .editorconfig
+  - .vscode
 
 enable-nolib-creation: no
