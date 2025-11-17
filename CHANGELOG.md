@@ -2,6 +2,22 @@
 
 All notable changes to Dominos_Fader will be documented in this file.
 
+## [1.0.8] - 2025-11-17
+
+### Added
+- Professional configuration panel GUI accessible via `/dfc` command or Interface Options → AddOns → Dominos → Fader
+- Visual configuration for all 10 status event triggers per bar (Combat, Target, Focus, Mounted, Moving, Talking to NPC, Dragonriding, Casting, Edit Mode, Grid Mode)
+- "Quick Setup" button to enable Combat, Target, and Focus triggers for all bars at once
+- "Reset All" button to restore MAS default behavior
+- "Apply Changes" button to save and reload trigger settings
+
+### Changed
+- Configuration panel shows all action bars with scrollable interface
+- Improved user experience with visual checkboxes instead of slash commands only
+
+### Fixed
+- ScrollFrame configuration to properly display bar options
+
 ## [1.0.7] - 2025-11-16
 
 ### Added
