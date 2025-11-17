@@ -1,0 +1,13 @@
+package-as: Dominos_Fader
+
+manual-changelog:
+  filename: CHANGELOG.md
+  markup-type: markdown
+
+ignore:
+  - README.md
+  - .git
+  - .github
+  - .gitignore
+
+enable-nolib-creation: no
