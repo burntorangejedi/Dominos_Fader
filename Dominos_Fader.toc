@@ -4,7 +4,7 @@
 ## Author: Your Name
 ## Version: @project-version@
 ## Dependencies: Dominos, MouseoverActionSettings
-## X-Curse-Project-ID: 
+## X-Curse-Project-ID: 1386463
 ## X-WoWI-ID: 
 
 Core.lua
