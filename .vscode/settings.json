@@ -16,6 +16,10 @@
     ],
     "Lua.diagnostics.globals": [
         "ExtraActionBarFrame",
-        "ZoneAbilityFrame"
+        "ZoneAbilityFrame",
+        "SlashCmdList",
+        "Settings",
+        "StaticPopupDialogs",
+        "StaticPopup_Show"
     ]
 }

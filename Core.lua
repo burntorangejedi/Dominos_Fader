@@ -21,7 +21,15 @@ addonTable.MAS = MAS
 DominosFader.registeredBars = {}
 
 function DominosFader:OnInitialize()
-    self:Print("Dominos Fader loaded - MouseOverActionSettings support enabled")
+    print("Dominos_Fader: MouseOverActionSettings support enabled")
+    
+    -- Create a custom category in MAS for Dominos bars
+    if MAS.db and MAS.db.profile then
+        -- Initialize Dominos category if it doesn't exist
+        if not MAS.db.profile.dominosCategory then
+            MAS.db.profile.dominosCategory = {}
+        end
+    end
 end
 
 function DominosFader:OnEnable()
@@ -33,12 +41,153 @@ function DominosFader:OnEnable()
     for id, frame in Dominos.Frame:GetAll() do
         self:RegisterBar(frame)
     end
+    
+    -- Register slash command to refresh all Dominos bars
+    SLASH_DOMINOSFADER1 = "/dominosfader"
+    SLASH_DOMINOSFADER2 = "/df"
+    SlashCmdList["DOMINOSFADER"] = function(msg)
+        if msg == "refresh" or msg == "reload" then
+            DominosFader:RefreshAllBars()
+            print("Dominos_Fader: Refreshed all bar settings")
+        elseif msg == "debug" then
+            -- Debug: print settings for first action bar
+            local moduleName = "Dominos_ActionBar1"
+            if MAS.db and MAS.db.profile and MAS.db.profile[moduleName] then
+                print("Debug for " .. moduleName .. ":")
+                local dbObj = MAS.db.profile[moduleName]
+                for k, v in pairs(dbObj) do
+                    print("  " .. k .. " = " .. tostring(v))
+                end
+                
+                -- Also check if there's a separate triggers table
+                print("Checking module object:")
+                local module = MAS:GetModule(moduleName, true)
+                if module then
+                    print("  Module exists: " .. tostring(module:IsEnabled()))
+                end
+                
+                -- Check the mouseover unit
+                local data = DominosFader.registeredBars[1]
+                if data and data.mo_unit then
+                    print("Mouseover unit statusEvents:")
+                    if data.mo_unit.statusEvents then
+                        for i, event in ipairs(data.mo_unit.statusEvents) do
+                            print("  [" .. i .. "] = " .. event)
+                        end
+                    else
+                        print("  No statusEvents table!")
+                    end
+                end
+            else
+                print("No settings found for " .. moduleName)
+            end
+        elseif msg:match("^set ") then
+            -- Manual command to set an event: /df set TARGET_UPDATE
+            -- Or set for specific bar: /df set 2 TARGET_UPDATE
+            local barNum, event = msg:match("^set (%d+) (.+)")
+            if not barNum then
+                -- No bar number specified, default to bar 1
+                barNum = "1"
+                event = msg:match("^set (.+)")
+            end
+            
+            if event then
+                local moduleName = "Dominos_ActionBar" .. barNum
+                if not MAS.db.profile[moduleName] then
+                    print("Error: Bar " .. barNum .. " not found")
+                    return
+                end
+                
+                MAS.db.profile[moduleName][event] = true
+                print("Set " .. moduleName .. "." .. event .. " = true")
+                
+                -- Force disable and re-enable the module
+                local module = MAS:GetModule(moduleName, true)
+                if module then
+                    module:Disable()
+                    module:Enable()
+                    print("Reloaded module")
+                end
+            end
+        elseif msg:match("^enable ") then
+            -- Enable multiple events at once: /df enable 1 COMBAT TARGET FOCUS
+            local barNum = msg:match("^enable (%d+)")
+            if barNum then
+                local moduleName = "Dominos_ActionBar" .. barNum
+                if not MAS.db.profile[moduleName] then
+                    print("Error: Bar " .. barNum .. " not found")
+                    return
+                end
+                
+                local events = {msg:match("^enable %d+ (.+)")}
+                local eventStr = events[1]
+                if eventStr then
+                    local count = 0
+                    for event in eventStr:gmatch("%S+") do
+                        local fullEvent = event:upper()
+                        if not fullEvent:match("_UPDATE$") then
+                            fullEvent = fullEvent .. "_UPDATE"
+                        end
+                        MAS.db.profile[moduleName][fullEvent] = true
+                        print("  Enabled " .. fullEvent)
+                        count = count + 1
+                    end
+                    
+                    if count > 0 then
+                        -- Reload the module
+                        local module = MAS:GetModule(moduleName, true)
+                        if module then
+                            module:Disable()
+                            module:Enable()
+                            print("Reloaded " .. moduleName .. " with " .. count .. " events")
+                        end
+                    end
+                end
+            end
+        elseif msg == "setall" then
+            -- Enable common triggers for all action bars (1-10)
+            local events = {"COMBAT_UPDATE", "TARGET_UPDATE", "FOCUS_UPDATE"}
+            for barId = 1, 10 do
+                local moduleName = "Dominos_ActionBar" .. barId
+                if MAS.db.profile[moduleName] then
+                    for _, event in ipairs(events) do
+                        MAS.db.profile[moduleName][event] = true
+                    end
+                    local module = MAS:GetModule(moduleName, true)
+                    if module then
+                        module:Disable()
+                        module:Enable()
+                    end
+                    print("Configured " .. moduleName)
+                end
+            end
+            print("All action bars configured with Combat, Target, and Focus triggers")
+        else
+            print("Dominos_Fader commands:")
+            print("  /dfc - Open configuration panel")
+            print("  /df refresh - Reload all bar settings")
+            print("  /df debug - Show settings for Action Bar 1")
+            print("  /df set <EVENT> - Enable event for bar 1")
+            print("  /df set <bar#> <EVENT> - Enable event for specific bar")
+            print("  /df enable <bar#> <events> - Enable multiple events")
+            print("  /df setall - Enable Combat, Target, and Focus for all bars")
+        end
+    end
 end
 
 function DominosFader:OnDisable()
     -- Unregister all bars
     for id, data in pairs(self.registeredBars) do
         self:UnregisterBar(id)
+    end
+end
+
+function DominosFader:RefreshAllBars()
+    -- Refresh settings for all registered bars
+    for id, data in pairs(self.registeredBars) do
+        if data.mas_module and data.mas_module.Refresh then
+            data.mas_module:Refresh()
+        end
     end
 end
 

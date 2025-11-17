@@ -12,7 +12,7 @@ local MenuBarModule = {}
 addonTable.modules.menu = MenuBarModule
 
 function MenuBarModule:RegisterBar(bar, registrationData)
-    local moduleName = "DominosMenuBar"
+    local moduleName = "Dominos_MenuBar"
     local eventName = "DOMINOS_MENU_BAR_UPDATE"
     
     -- Get menu buttons
@@ -66,6 +66,7 @@ function MenuBarModule:RegisterBar(bar, registrationData)
     function module:OnEnable()
         local dbObj = MAS.db.profile[moduleName]
         if not dbObj then
+            -- Initialize default settings with combat enabled
             MAS.db.profile[moduleName] = {
                 enabled = true,
                 minAlpha = 0,
@@ -75,8 +76,14 @@ function MenuBarModule:RegisterBar(bar, registrationData)
                 useCustomAnimationSpeed = false,
                 animationSpeed_In = 0.3,
                 animationSpeed_Out = 0.5,
+                COMBAT_UPDATE = true,  -- Enable combat by default
             }
             dbObj = MAS.db.profile[moduleName]
+        else
+            -- Migrate existing settings: enable combat if not explicitly set
+            if dbObj.COMBAT_UPDATE == nil then
+                dbObj.COMBAT_UPDATE = true
+            end
         end
         
         if dbObj.useCustomDelay then
@@ -88,12 +95,28 @@ function MenuBarModule:RegisterBar(bar, registrationData)
             mo_unit.animationSpeed_In = dbObj.animationSpeed_In
             mo_unit.animationSpeed_Out = dbObj.animationSpeed_Out
         end
+        
+        -- Update status events - read current settings from database
         mo_unit.statusEvents = {}
-        for event, _ in pairs(addonTable.events or {}) do
+        local possibleEvents = {
+            "COMBAT_UPDATE",
+            "TARGET_UPDATE", 
+            "FOCUS_UPDATE",
+            "MOUNT_UPDATE",
+            "PLAYER_MOVING_UPDATE",
+            "NPC_UPDATE",
+            "DRAGONRIDING_UPDATE",
+            "CASTING_UPDATE",
+            "EDIT_MODE_UPDATE",
+            "GRID_UPDATE",
+        }
+        
+        for _, event in ipairs(possibleEvents) do
             if dbObj[event] then
                 table.insert(mo_unit.statusEvents, event)
             end
         end
+        
         mo_unit:Enable()
     end
     
@@ -101,18 +124,77 @@ function MenuBarModule:RegisterBar(bar, registrationData)
         mo_unit:Disable()
     end
     
+    function module:Refresh()
+        local dbObj = MAS.db.profile[moduleName]
+        if not dbObj then return end
+        
+        if dbObj.useCustomDelay then
+            mo_unit.delay = dbObj.delay
+        end
+        mo_unit.minAlpha = dbObj.minAlpha
+        mo_unit.maxAlpha = dbObj.maxAlpha
+        if dbObj.useCustomAnimationSpeed then
+            mo_unit.animationSpeed_In = dbObj.animationSpeed_In
+            mo_unit.animationSpeed_Out = dbObj.animationSpeed_Out
+        end
+        
+        mo_unit.statusEvents = {}
+        local possibleEvents = {
+            "COMBAT_UPDATE",
+            "TARGET_UPDATE", 
+            "FOCUS_UPDATE",
+            "MOUNT_UPDATE",
+            "PLAYER_MOVING_UPDATE",
+            "NPC_UPDATE",
+            "DRAGONRIDING_UPDATE",
+            "CASTING_UPDATE",
+            "EDIT_MODE_UPDATE",
+            "GRID_UPDATE",
+        }
+        
+        for _, event in ipairs(possibleEvents) do
+            if dbObj[event] then
+                table.insert(mo_unit.statusEvents, event)
+            end
+        end
+        
+        if mo_unit.isEnabled then
+            mo_unit:Disable()
+            mo_unit:Enable()
+        end
+    end
+    
     -- Store reference
     registrationData.mo_unit = mo_unit
     registrationData.mas_module = module
+    
+    mo_unit.mas_module = module
     
     -- Enable the module if MAS is enabled
     if MAS:IsEnabled() then
         module:Enable()
     end
+    
+    -- Register as User Module in MAS
+    local userModuleData = {
+        name = moduleName,
+        displayName = "Dominos Menu Bar",
+        category = "Dominos",
+        Parents = {bar},
+        scriptRegions = buttons,
+    }
+    
+    if MAS.RegisterUserModule then
+        MAS:RegisterUserModule(userModuleData)
+    end
 end
 
 function MenuBarModule:UnregisterBar(bar)
-    local moduleName = "DominosMenuBar"
+    local moduleName = "Dominos_MenuBar"
+    
+    if MAS.UnregisterUserModule then
+        MAS:UnregisterUserModule(moduleName)
+    end
     
     local module = MAS:GetModule(moduleName, true)
     if module then

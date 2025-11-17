@@ -8,6 +8,7 @@
 ## X-WoWI-ID: 
 
 Core.lua
+Options.lua
 Modules\ActionBar.lua
 Modules\BagBar.lua
 Modules\MenuBar.lua

@@ -13,7 +13,7 @@ addonTable.modules.action = ActionBarModule
 
 function ActionBarModule:RegisterBar(bar, registrationData)
     local barId = bar.id
-    local moduleName = "DominosActionBar" .. barId
+    local moduleName = "Dominos_ActionBar" .. barId
     local eventName = "DOMINOS_ACTION_BAR_" .. barId .. "_UPDATE"
     
     -- Get all buttons from this bar
@@ -46,7 +46,7 @@ function ActionBarModule:RegisterBar(bar, registrationData)
     function module:OnEnable()
         local dbObj = MAS.db.profile[moduleName]
         if not dbObj then
-            -- Initialize default settings
+            -- Initialize default settings with combat enabled
             MAS.db.profile[moduleName] = {
                 enabled = true,
                 minAlpha = 0,
@@ -56,10 +56,17 @@ function ActionBarModule:RegisterBar(bar, registrationData)
                 useCustomAnimationSpeed = false,
                 animationSpeed_In = 0.3,
                 animationSpeed_Out = 0.5,
+                COMBAT_UPDATE = true,  -- Enable combat by default
             }
             dbObj = MAS.db.profile[moduleName]
+        else
+            -- Migrate existing settings: enable combat if not explicitly set
+            if dbObj.COMBAT_UPDATE == nil then
+                dbObj.COMBAT_UPDATE = true
+            end
         end
         
+        -- Apply settings to mouseover unit
         if dbObj.useCustomDelay then
             mo_unit.delay = dbObj.delay
         end
@@ -69,13 +76,73 @@ function ActionBarModule:RegisterBar(bar, registrationData)
             mo_unit.animationSpeed_In = dbObj.animationSpeed_In
             mo_unit.animationSpeed_Out = dbObj.animationSpeed_Out
         end
+        
+        -- Update status events - read current settings from database
         mo_unit.statusEvents = {}
-        for event, _ in pairs(addonTable.events or {}) do
+        local possibleEvents = {
+            "COMBAT_UPDATE",
+            "TARGET_UPDATE", 
+            "FOCUS_UPDATE",
+            "MOUNT_UPDATE",
+            "PLAYER_MOVING_UPDATE",
+            "NPC_UPDATE",
+            "DRAGONRIDING_UPDATE",
+            "CASTING_UPDATE",
+            "EDIT_MODE_UPDATE",
+            "GRID_UPDATE",
+        }
+        
+        for _, event in ipairs(possibleEvents) do
             if dbObj[event] then
                 table.insert(mo_unit.statusEvents, event)
             end
         end
+        
         mo_unit:Enable()
+    end
+    
+    function module:Refresh()
+        -- Called when settings change - reload status events
+        local dbObj = MAS.db.profile[moduleName]
+        if not dbObj then return end
+        
+        -- Re-apply all settings
+        if dbObj.useCustomDelay then
+            mo_unit.delay = dbObj.delay
+        end
+        mo_unit.minAlpha = dbObj.minAlpha
+        mo_unit.maxAlpha = dbObj.maxAlpha
+        if dbObj.useCustomAnimationSpeed then
+            mo_unit.animationSpeed_In = dbObj.animationSpeed_In
+            mo_unit.animationSpeed_Out = dbObj.animationSpeed_Out
+        end
+        
+        -- Rebuild status events from current database state
+        mo_unit.statusEvents = {}
+        local possibleEvents = {
+            "COMBAT_UPDATE",
+            "TARGET_UPDATE", 
+            "FOCUS_UPDATE",
+            "MOUNT_UPDATE",
+            "PLAYER_MOVING_UPDATE",
+            "NPC_UPDATE",
+            "DRAGONRIDING_UPDATE",
+            "CASTING_UPDATE",
+            "EDIT_MODE_UPDATE",
+            "GRID_UPDATE",
+        }
+        
+        for _, event in ipairs(possibleEvents) do
+            if dbObj[event] then
+                table.insert(mo_unit.statusEvents, event)
+            end
+        end
+        
+        -- Disable and re-enable to force update
+        if mo_unit.isEnabled then
+            mo_unit:Disable()
+            mo_unit:Enable()
+        end
     end
     
     function module:OnDisable()
@@ -86,27 +153,26 @@ function ActionBarModule:RegisterBar(bar, registrationData)
     registrationData.mo_unit = mo_unit
     registrationData.mas_module = module
     
+    -- Store the module reference on the mouseover unit for later refresh calls
+    mo_unit.mas_module = module
+    
     -- Enable the module if MAS is enabled
     if MAS:IsEnabled() then
         module:Enable()
     end
-    
-    -- Add to MAS UI (if you want it to appear in MAS options)
-    self:AddToMASOptions(moduleName, "Action Bar " .. barId, bar)
 end
 
 function ActionBarModule:UnregisterBar(bar)
-    local moduleName = "DominosActionBar" .. bar.id
+    local moduleName = "Dominos_ActionBar" .. bar.id
+    
+    -- Unregister User Module if the API exists
+    if MAS.UnregisterUserModule then
+        MAS:UnregisterUserModule(moduleName)
+    end
     
     -- Disable and remove the MAS module
     local module = MAS:GetModule(moduleName, true)
     if module then
         module:Disable()
     end
-end
-
-function ActionBarModule:AddToMASOptions(moduleName, displayName, bar)
-    -- This would add the bar to MAS options panel
-    -- The implementation depends on MAS's option system
-    -- You may need to use MAS's API to register this as a user module
 end
