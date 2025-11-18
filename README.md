@@ -128,3 +128,5 @@ For issues with:
 ## License
 
 This addon follows the same license as its dependencies.
+
+Support me on [Ko-Fi](https://ko-fi.com/burntorangejedi)
