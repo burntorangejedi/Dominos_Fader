@@ -2,6 +2,10 @@
 
 All notable changes to Dominos_Fader will be documented in this file.
 
+## [1.0.9] - 2025-11-17
+### Changed
+- Updated version number for latest Midnight
+
 ## [1.0.8] - 2025-11-17
 
 ### Added
