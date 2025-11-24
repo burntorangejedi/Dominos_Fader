@@ -1,4 +1,4 @@
-## Interface: 110205
+## Interface: 110205, 110207, 120000
 ## Title: Dominos |cff7fffd4Fader|r
 ## Notes: Adds MouseOverActionSettings support to Dominos bars
 ## Author: Your Name
